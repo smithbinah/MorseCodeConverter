@@ -1,12 +1,13 @@
 class Morse
-  attr_accessor :controller
-
+  attr_accessor :controller, :test_str
   def initialize()
+    @test_str = "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America."
     @controller = Controller.new()
   end
 
   def encode
-    
+    result = @controller.translate_encode(@test_str)
+    write_file(result)
   end
 
   def decode
@@ -15,7 +16,8 @@ class Morse
   def read_file
   end
 
-  def write_file
+  def write_file(input)
+    open('preamble_decode.txt')
   end
 end
 
@@ -33,11 +35,11 @@ class Controller
     loop do
       userinput = promptForInput()
       @morseString = ""
-      puts "Translated Message: #{translate(userinput)}"
+      puts "Translated Message: #{translate_encode(userinput)}"
     end
   end
 
-  def translate(message)
+  def translate_encode(message)
     message = convertToString(message)
     message.each_char { |x|
       convertCharToMorse(x)
@@ -62,7 +64,7 @@ class Controller
   end
 
   def promptForInput()
-    puts "Enter text to be translated into Morse Code."
+    puts "Enter text to be translate_encoded into Morse Code."
     input = gets
   end
 
