@@ -1,42 +1,72 @@
 class Morse
-  attr_accessor :controller, :test_str
-  def initialize()
-    @test_str = "We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America."
-    @controller = Controller.new()
+  def self.initialize(encode_or_decode, file_prefix)
+    file_name = file_prefix + ".txt"
+    file_location = File.join(File.dirname(__FILE__), "#{file_name}")
+    controller = Controller.new()
+    if encode_or_decode.downcase == "encode"
+      is_encoding = true
+    elsif encode_or_decode.downcase == "decode"
+      is_encoding = false
+    end
+    if is_encoding
+      self.encode(is_encoding, controller, file_location,file_name)
+    else
+      self.decode(is_encoding, file_location, controller,file_name)
+    end
   end
 
-  def encode
-    result = @controller.translate_encode(@test_str)
-    write_file(result)
+  def self.encode(encoding, controller, file_location,file_name)
+    file_contents = read_file(encoding, file_location,file_name)
+    puts "str value: #{file_contents.to_s}"
+    result = controller.translate_encode(file_contents)
+    self.write_file(result, encoding)
+    puts "Translated Message: #{result}"
   end
 
-  def decode
+  def self.decode(encoding, file_location, controller,file_name)
+    file_contents = read_file(encoding, file_location,file_name)
+    puts "str value: #{file_contents.to_s}"
+    result = controller.translate_decode(file_contents)
+    puts "Translated Message: #{result}"
+    self.write_file(result, encoding)
   end
 
-  def read_file
+  def self.read_file(encoding, file_location,file_name)
+    case encoding
+    when true
+      temp_str = ""
+      file_contents = File.open(file_name, "r")
+      file_contents.each_line { |x|
+        temp_str << x
+      }
+      file_contents = temp_str
+    when false
+      puts "not encoding"
+      temp_str = ""
+      file_contents = File.open("preamble_encode.txt", "r")
+      file_contents.each_line { |x|
+        temp_str << x
+      }
+      file_contents = temp_str
+    else
+      puts "wrong input"
+    end
+    file_contents
   end
 
-  def write_file(input)
-    open('preamble_decode.txt')
+  def self.write_file(input, encoding)
+    File.open( encoding ? "preamble_encode.txt" : "preamble_decode.txt", "w") { |x|
+      x.puts input
+    }
   end
 end
 
 class Controller
-  attr_accessor :dictionary
-  attr_accessor :morseString
+  attr_accessor :dictionary, :morseString
 
   def initialize()
     @dictionary = Dictionary.new()
     @morseString = String.new()
-    run
-  end
-
-  def run
-    loop do
-      userinput = promptForInput()
-      @morseString = ""
-      puts "Translated Message: #{translate_encode(userinput)}"
-    end
   end
 
   def translate_encode(message)
@@ -47,12 +77,36 @@ class Controller
     @morseString
   end
 
+  def translate_decode(message)
+    word_arr = split_into_words(message.chomp)
+    temp_holder = " "
+    word_arr.each { |x|
+      char_array = x.split(" ").to_a
+      @morseString << convert_char_to_plain_text(char_array)
+    }
+    @morseString
+  end
+
+  def split_into_words(message)
+    message.split("  ").to_a
+  end
+
+  def split_into_characters(message)
+    message.split(" ").to_a
+  end
+
   def convertCharToMorse(character)
     if character =~ /\s/
       @morseString << "  "
     else
       @morseString << " #{dictionary.accessDictionary(character)}"
     end
+  end
+
+  def convert_char_to_plain_text(character)
+    encoding = false
+    character_new = dictionary.accessDictionary(character, encoding)
+    character_new
   end
 
   def convertToString(message)
@@ -74,10 +128,7 @@ class Controller
 end
 
 class Dictionary
-  attr_accessor :morseAlphabet
-  attr_accessor :testHash
-
-  @testHash = {1 => "one"}
+  attr_accessor :morseAlphabet, :testHash
 
   def initialize()
     @morseAlphabet = Hash[
@@ -119,16 +170,19 @@ class Dictionary
     ]
   end
 
-  #   def accessDictionary(.args)
-  #     case args.size
-  #     when 1
-  #       placeholder = morseAlphabet[args[0]]
-  #     when 2
-  #     end
-  #     output = placeholder
-  #   end
-  def accessDictionary(args)
-    @morseAlphabet[args]
+  def accessDictionary(args, encoding = true)
+    results = " "
+    if encoding
+      results = @morseAlphabet[args]
+    else
+      args.each { |x|
+        results << "#{@morseAlphabet.key(x)}"
+      }
+    end
+    if !encoding
+      results + " "
+    end
+    results
   end
 
   def test
@@ -140,4 +194,7 @@ class Dictionary
   end
 end
 
-controller = Controller.new()
+encode_or_decode, file_prefix = ARGV
+Morse.initialize(encode_or_decode, file_prefix)
+# puts "Press enter to continue"
+ 
